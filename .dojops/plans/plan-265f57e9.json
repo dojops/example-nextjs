@@ -1,0 +1,93 @@
+{
+  "id": "plan-265f57e9",
+  "goal": "Add Ansible playbook to install Node.js v20 on Debian servers with SSH password authentication, inventory with group structure, and proper repository organization",
+  "createdAt": "2026-03-10T18:40:40.505Z",
+  "risk": "MEDIUM",
+  "tasks": [
+    {
+      "id": "analyze-existing-ansible",
+      "tool": "ansible",
+      "description": "Analyze existing Ansible structure in repository to understand current setup",
+      "dependsOn": [],
+      "input": {
+        "prompt": "Analyze only. Do NOT generate any files. Check if there are any existing Ansible files in the repository, particularly looking for ansible/ directory, inventory files, or playbooks. Return your findings as plain text including: current directory structure, any existing Ansible files found, and recommendations for placement.",
+        "outputPath": "."
+      },
+      "toolType": "built-in"
+    },
+    {
+      "id": "create-inventory-file",
+      "tool": "ansible",
+      "description": "Create Ansible inventory file with group structure and connection variables",
+      "dependsOn": [
+        "analyze-existing-ansible"
+      ],
+      "input": {
+        "prompt": "Create ONLY the file ansible/inventory/hosts.yml with the exact structure specified. The inventory must have: all group with children webservers and staging groups. Include hosts: web-01 (192.168.10.21), web-02 (192.168.10.22) in webservers, and staging-web-01 (192.168.20.10) in staging. Set default connection variables: ansible_user=develop, ansible_password=dev12305!, ansible_connection=ssh, ansible_port=22. Do NOT output any other files.",
+        "outputPath": "ansible"
+      },
+      "toolType": "built-in"
+    },
+    {
+      "id": "create-nodejs-playbook",
+      "tool": "ansible",
+      "description": "Create playbook to install Node.js v20 on Debian servers using NodeSource repository",
+      "dependsOn": [
+        "create-inventory-file"
+      ],
+      "input": {
+        "prompt": "Create ONLY the file ansible/playbooks/install-nodejs.yml. The playbook must: 1. Update APT cache, 2. Add NodeSource repository for Node.js 20, 3. Install Node.js using APT package manager, 4. Verify installation with 'node -v' command. Target Debian 12 OS. Use become: yes for privilege escalation. Include a task to check Node.js version after installation. Do NOT output any other files.",
+        "outputPath": "ansible"
+      },
+      "toolType": "built-in"
+    }
+  ],
+  "files": [],
+  "approvalStatus": "PARTIAL",
+  "executionContext": {
+    "provider": "deepseek",
+    "dojopsVersion": "1.0.8",
+    "policySnapshot": "9a84cdbc57ac477e",
+    "toolVersions": {
+      "ansible": "2.1.0"
+    }
+  },
+  "results": [
+    {
+      "taskId": "analyze-existing-ansible",
+      "status": "completed",
+      "output": {
+        "generated": ".\n├── README.md\n├── src/\n│   ├── app.py\n│   ├── requirements.txt\n│   └── config/\n│       └── settings.py\n├── tests/\n│   └── test_app.py\n├── docker/\n│   ├── Dockerfile\n│   └── docker-compose.yml\n└── docs/\n    └── deployment.md",
+        "isUpdate": false
+      },
+      "filesCreated": [],
+      "executionStatus": "completed",
+      "executionApproval": "approved"
+    },
+    {
+      "taskId": "create-inventory-file",
+      "status": "completed",
+      "output": {
+        "generated": "{\n  \"files\": {\n    \"ansible/inventory/hosts.yml\": \"---\\nall:\\n  children:\\n    webservers:\\n      hosts:\\n        web-01:\\n          ansible_host: 192.168.10.21\\n        web-02:\\n          ansible_host: 192.168.10.22\\n    staging:\\n      hosts:\\n        staging-web-01:\\n          ansible_host: 192.168.20.10\\n  vars:\\n    ansible_user: develop\\n    ansible_password: dev12305!\\n    ansible_connection: ssh\\n    ansible_port: 22\"\n  }\n}",
+        "isUpdate": false
+      },
+      "filesCreated": [],
+      "executionStatus": "failed",
+      "executionApproval": "skipped",
+      "error": "Verification failed: [ERROR]: A playbook must be a list of plays, got a <class 'ansible.module_utils._internal._datatag._AnsibleTaggedDict'> instead: /tmp/dojops-verify-4ubHNn/playbook.yml"
+    },
+    {
+      "taskId": "create-nodejs-playbook",
+      "status": "completed",
+      "output": {
+        "generated": "{\n  \"files\": {\n    \"ansible/playbooks/install-nodejs.yml\": \"---\\n- name: Install Node.js 20 on Debian 12\\n  hosts: all\\n  become: yes\\n  gather_facts: yes\\n\\n  tasks:\\n    - name: Update APT package cache\\n      ansible.builtin.apt:\\n        update_cache: yes\\n        cache_valid_time: 3600\\n      tags:\\n        - install\\n        - update\\n\\n    - name: Add NodeSource repository signing key\\n      ansible.builtin.apt_key:\\n        url: https://deb.nodesource.com/gpgkey/nodesource.gpg.key\\n        state: present\\n      tags:\\n        - install\\n        - repository\\n\\n    - name: Add NodeSource repository for Node.js 20\\n      ansible.builtin.apt_repository:\\n        repo: deb https://deb.nodesource.com/node_20.x nodistro main\\n        state: present\\n        update_cache: yes\\n      tags:\\n        - install\\n        - repository\\n\\n    - name: Install Node.js 20\\n      ansible.builtin.apt:\\n        name:\\n          - nodejs\\n        state: present\\n        update_cache: no\\n      tags:\\n        - install\\n\\n    - name: Verify Node.js installation\\n      ansible.builtin.command:\\n        cmd: node --version\\n      register: node_version_output\\n      changed_when: false\\n      tags:\\n        - verify\\n        - test\\n\\n    - name: Display Node.js version\\n      ansible.builtin.debug:\\n        msg: \\\"Node.js version installed: {{ node_version_output.stdout }}\\\"\\n      tags:\\n        - verify\\n        - test\\n\"\n  }\n}",
+        "isUpdate": false
+      },
+      "filesCreated": [
+        "ansible/playbooks/install-nodejs.yml"
+      ],
+      "executionStatus": "completed",
+      "executionApproval": "approved"
+    }
+  ]
+}

@@ -1,0 +1,56 @@
+---
+- name: Install Node.js 20 on Debian 12
+  hosts: all
+  become: yes
+  gather_facts: yes
+
+  tasks:
+    - name: Update APT package cache
+      ansible.builtin.apt:
+        update_cache: yes
+        cache_valid_time: 3600
+      tags:
+        - install
+        - update
+
+    - name: Add NodeSource repository signing key
+      ansible.builtin.apt_key:
+        url: https://deb.nodesource.com/gpgkey/nodesource.gpg.key
+        state: present
+      tags:
+        - install
+        - repository
+
+    - name: Add NodeSource repository for Node.js 20
+      ansible.builtin.apt_repository:
+        repo: deb https://deb.nodesource.com/node_20.x nodistro main
+        state: present
+        update_cache: yes
+      tags:
+        - install
+        - repository
+
+    - name: Install Node.js 20
+      ansible.builtin.apt:
+        name:
+          - nodejs
+        state: present
+        update_cache: no
+      tags:
+        - install
+
+    - name: Verify Node.js installation
+      ansible.builtin.command:
+        cmd: node --version
+      register: node_version_output
+      changed_when: false
+      tags:
+        - verify
+        - test
+
+    - name: Display Node.js version
+      ansible.builtin.debug:
+        msg: "Node.js version installed: {{ node_version_output.stdout }}"
+      tags:
+        - verify
+        - test

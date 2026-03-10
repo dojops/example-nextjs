@@ -1,0 +1,7 @@
+# DojOps project state
+session.json
+execution-logs/
+approvals/
+sessions/
+memory/
+audit-key
