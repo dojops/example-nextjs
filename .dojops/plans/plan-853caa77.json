@@ -1,0 +1,144 @@
+{
+  "id": "plan-853caa77",
+  "goal": "Optimize existing Dockerfile with best practices and linting",
+  "createdAt": "2026-03-10T22:54:05.874Z",
+  "risk": "MEDIUM",
+  "tasks": [
+    {
+      "id": "analyze-existing-dockerfile",
+      "tool": "dockerfile",
+      "description": "Analyze current Dockerfile structure and identify optimization opportunities",
+      "dependsOn": [],
+      "input": {
+        "prompt": "Analyze the existing Dockerfile at the project root. Do NOT generate any files. Return your findings as plain text including: current structure, stages, base images, user configuration, caching strategy, and any issues found regarding best practices (multi-stage builds, non-root user, layer caching).",
+        "outputPath": "."
+      },
+      "toolType": "built-in"
+    },
+    {
+      "id": "create-optimized-dockerfile",
+      "tool": "dockerfile",
+      "description": "Create optimized Dockerfile with multi-stage builds, non-root user, and layer caching",
+      "dependsOn": [
+        "analyze-existing-dockerfile"
+      ],
+      "input": {
+        "prompt": "Create ONLY the file Dockerfile at the project root — an optimized multi-stage Dockerfile for a Next.js application with all best practices. Requirements: 1) Use multi-stage builds with at least two stages (builder and production). 2) Create and use a non-root user in the production stage. 3) Implement layer caching by ordering dependencies properly and using COPY --from for stage artifacts. 4) Use appropriate base images (e.g., node:alpine for builder, node:alpine or a minimal image for production). 5) Include health checks and proper labels. 6) Ensure the build is fast by minimizing layers and using cache-friendly commands. Do NOT output any other files.",
+        "outputPath": "."
+      },
+      "toolType": "built-in"
+    },
+    {
+      "id": "create-dockerignore",
+      "tool": "dockerfile",
+      "description": "Create .dockerignore file to exclude unnecessary files and improve build performance",
+      "dependsOn": [
+        "analyze-existing-dockerfile"
+      ],
+      "input": {
+        "prompt": "Create ONLY the file .dockerignore at the project root — a .dockerignore file that excludes node_modules, .git, logs, and other unnecessary files to improve Docker build performance and reduce image size. Include common patterns for Next.js projects. Do NOT output any other files.",
+        "outputPath": "."
+      },
+      "toolType": "built-in"
+    },
+    {
+      "id": "create-hadolint-config",
+      "tool": "makefile",
+      "description": "Create Makefile target to lint Dockerfile with Hadolint",
+      "dependsOn": [
+        "create-optimized-dockerfile"
+      ],
+      "input": {
+        "prompt": "Create ONLY the file Makefile at the project root — a Makefile with a target 'lint-docker' that runs Hadolint on the Dockerfile. If a Makefile already exists, add this target while keeping all existing targets unchanged. The target should use hadolint/hadolint Docker image or local installation. Do NOT output any other files.",
+        "outputPath": "."
+      },
+      "toolType": "built-in"
+    },
+    {
+      "id": "update-github-actions-for-lint",
+      "tool": "github-actions",
+      "description": "Update existing GitHub Actions workflow to include Dockerfile linting",
+      "dependsOn": [
+        "create-hadolint-config"
+      ],
+      "input": {
+        "prompt": "Update ONLY the file .github/workflows/ci.yml. Keep ALL existing jobs and steps unchanged. Add a new job or step that runs the 'make lint-docker' command to lint the Dockerfile with Hadolint. Ensure it runs as part of the CI pipeline. Do NOT output any other files — only .github/workflows/ci.yml.",
+        "outputPath": "."
+      },
+      "toolType": "built-in"
+    }
+  ],
+  "files": [],
+  "approvalStatus": "PARTIAL",
+  "executionContext": {
+    "provider": "deepseek",
+    "dojopsVersion": "1.0.8",
+    "policySnapshot": "9a84cdbc57ac477e",
+    "toolVersions": {
+      "dockerfile": "2.1.0",
+      "makefile": "2.1.0",
+      "github-actions": "2.2.0"
+    }
+  },
+  "results": [
+    {
+      "taskId": "analyze-existing-dockerfile",
+      "status": "completed",
+      "output": {
+        "generated": "## Analysis of Existing Dockerfile\n\n### Current Structure\n- **Multi-stage build**: Yes (3 stages)\n- **Stages**: \n  1. `deps` - Production dependencies only\n  2. `builder` - Build stage\n  3. `runner` - Final runtime stage\n\n### Base Images\n- All stages use: `node:20-alpine`\n- **Issue**: Using same base for all stages misses optimization opportunity\n\n### User Configuration\n- **Non-root user**: Yes (`nextjs:nodejs` with UID/GID 1001)\n- **User switching**: Properly implemented with `USER nextjs`\n- **Permission handling**: Correctly sets ownership for `.next` directory\n\n### Caching Strategy\n- **Dependency layer caching**: Good - copies `package.json` and `package-lock.json` first\n- **Build layer separation**: Good - separates dependency installation from source code\n- **Issue**: No `.dockerignore` file mentioned, which could affect build context size\n\n### Best Practices Assessment\n\n**✅ Good Practices:**\n1. Multi-stage build implemented\n2. Non-root user with proper permissions\n3. Pinned Node.js version (20-alpine)\n4. Layer caching for dependencies\n5. HEALTHCHECK included\n6. WORKDIR set before operations\n7. COPY used instead of ADD\n8. EXPOSE for documented port (3000)\n9. ENV variables for configuration\n10. Labels for metadata\n\n**⚠️ Issues Found:**\n\n1. **Base image consistency**: All stages use `node:20-alpine`, but builder stage could use full Node image for build tools\n2. **Missing `.dockerignore`**: No mention of `.dockerignore` file to exclude unnecessary files\n3. **Build stage optimization**: Could use `node:20` (full) for builder stage and `node:20-alpine` for runtime\n4. **Next.js specific**: Uses `.next/standalone` which suggests Next.js 12+ output mode\n5. **Healthcheck dependency**: Healthcheck assumes `/api/health` endpoint exists\n6. **Port configuration**: Uses both `EXPOSE 3000` and `ENV PORT=3000` (redundant but not harmful)\n7. **Layer combination**: Some RUN commands could be combined for fewer layers\n\n**🔍 Specific Observations:**\n- Uses Next.js standalone output mode (good for production)\n- Properly handles file ownership for Next.js cache\n- Includes both `package.json` and `package-lock.json*` (wildcard for lockfile variations)\n- Sets `NODE_ENV=production` in runner stage only\n- Uses `npm ci --only=production` in deps stage (correct for production)\n\n**Recommendations:**\n1. Add `.dockerignore` file to exclude `node_modules`, `.git`, etc.\n2. Consider using `node:20` for builder stage and `node:20-alpine` for runtime\n3. Verify healthcheck endpoint exists in the application\n4. Consider combining related RUN commands where possible\n\nThe configuration is generally production-ready with minor optimization opportunities.",
+        "isUpdate": true
+      },
+      "filesCreated": [],
+      "executionStatus": "failed",
+      "executionApproval": "approved",
+      "error": "Multi-file output must be valid JSON. The LLM returned non-JSON content. First 200 chars: ## Analysis of Existing Dockerfile\n\n### Current Structure\n- **Multi-stage build**: Yes (3 stages)\n- **Stages**: \n  1. `deps` - Production dependencies only\n  2. `builder` - Build stage\n  3. `runner` -"
+    },
+    {
+      "taskId": "create-optimized-dockerfile",
+      "status": "completed",
+      "output": {
+        "generated": "{\n  \"files\": {\n    \"Dockerfile\": \"FROM node:20-alpine AS deps\\nWORKDIR /app\\nCOPY package.json package-lock.json* ./\\nRUN npm ci --only=production\\n\\nFROM node:20-alpine AS builder\\nWORKDIR /app\\nCOPY --from=deps /app/node_modules ./node_modules\\nCOPY . .\\nRUN npm run build\\n\\nFROM node:20-alpine AS runner\\nWORKDIR /app\\n\\nENV NODE_ENV=production\\n\\nRUN addgroup --system --gid 1001 nodejs && \\\\\\n    adduser --system --uid 1001 nextjs\\n\\nCOPY --from=builder /app/public ./public\\n\\n# Set the correct permission for prerender cache\\nRUN mkdir .next && \\\\\\n    chown nextjs:nodejs .next\\n\\n# Automatically leverage output traces to reduce image size\\n# https://nextjs.org/docs/advanced-features/output-file-tracing\\nCOPY --from=builder --chown=nextjs:nodejs /app/.next/standalone ./\\nCOPY --from=builder --chown=nextjs:nodejs /app/.next/static ./.next/static\\n\\nUSER nextjs\\n\\nEXPOSE 3000\\n\\nENV PORT=3000\\nENV HOSTNAME=\\\"0.0.0.0\\\"\\n\\nHEALTHCHECK --interval=30s --timeout=3s --start-period=5s --retries=3 \\\\\\n  CMD node -e \\\"require('http').get('http://localhost:3000/api/health', (r) => {process.exit(r.statusCode === 200 ? 0 : 1)}).on('error', () => process.exit(1))\\\"\\n\\nLABEL maintainer=\\\"your-team@example.com\\\" \\\\\\n      version=\\\"1.0.0\\\" \\\\\\n      description=\\\"Next.js application\\\" \\\\\\n      org.opencontainers.image.source=\\\"https://github.com/your-org/your-repo\\\"\\n\\nCMD [\\\"node\\\", \\\"server.js\\\"]\"\n  }\n}",
+        "isUpdate": true
+      },
+      "filesCreated": [],
+      "executionStatus": "completed",
+      "executionApproval": "approved"
+    },
+    {
+      "taskId": "create-dockerignore",
+      "status": "completed",
+      "output": {
+        "generated": "{\n  \"files\": {\n    \".dockerignore\": \"# Dependencies\\nnode_modules\\nnpm-debug.log*\\nyarn-debug.log*\\nyarn-error.log*\\n\\n# Build outputs\\n.next\\nout\\ndist\\nbuild\\ncoverage\\n\\n# Environment variables\\n.env*.local\\n.env\\n.env.production\\n.env.development\\n\\n# Version control\\n.git\\n.gitignore\\n.gitattributes\\n\\n# Documentation\\n*.md\\nLICENSE\\nCHANGELOG.md\\nREADME.md\\n\\n# Logs\\nlogs\\n*.log\\n\\n# IDE and editor files\\n.vscode\\n.idea\\n*.swp\\n*.swo\\n*~\\n\\n# OS files\\n.DS_Store\\nThumbs.db\\n\\n# Docker files\\n.dockerignore\\nDockerfile*\\ndocker-compose*.yml\\n\\n# Test files\\n*.test.js\\n*.spec.js\\n__tests__\\n\\n# Next.js specific\\n.next/cache\\n.next/standalone\\n.next/static\\n.next/server\\n\\n# Temporary files\\n*.tmp\\n*.temp\\n\\n# Configuration files (except those needed for build)\\n*.config.js\\n*.config.ts\\ntsconfig.json\\njsconfig.json\\nnext.config.js\\n\\n# Source maps\\n*.map\\n\\n# TypeScript declaration files\\n*.d.ts\\n\\n# Optional: exclude local development files\\n.dockerignore.local\\nDockerfile.local\\n\"\n  }\n}",
+        "isUpdate": true
+      },
+      "filesCreated": [],
+      "executionStatus": "failed",
+      "executionApproval": "skipped",
+      "error": "Verification failed: unexpected 'n'\nexpecting '#', '\\', ADD, ARG, CMD, COPY, ENTRYPOINT, ENV, EXPOSE, FROM, HEALTHCHECK, LABEL, MAINTAINER, ONBUILD, RUN, SHELL, STOPSIGNAL, USER, VOLUME, WORKDIR, a pragma, at least one space, or end of input"
+    },
+    {
+      "taskId": "create-hadolint-config",
+      "status": "completed",
+      "output": {
+        "generated": ".PHONY: help lint-docker\n\n.DEFAULT_GOAL := help\n\n# Variables\nDOCKERFILE ?= Dockerfile\nHADOLINT_IMAGE ?= hadolint/hadolint:latest\nHADOLINT_CMD ?= docker run --rm -i $(HADOLINT_IMAGE)\n\nhelp: ## Show this help message\n\t@echo \"Usage: make [target]\"\n\t@echo \"\"\n\t@echo \"Targets:\"\n\t@awk 'BEGIN {FS = \":.*?## \"} /^[a-zA-Z_-]+:.*?## / {printf \"  %-15s %s\\n\", $$1, $$2}' $(MAKEFILE_LIST)\n\nlint-docker: ## Lint Dockerfile using Hadolint\nifeq (, $(shell which hadolint 2>/dev/null))\n\t@echo \"Using Docker image for Hadolint...\"\n\t@cat $(DOCKERFILE) | $(HADOLINT_CMD)\nelse\n\t@echo \"Using local Hadolint installation...\"\n\t@hadolint $(DOCKERFILE)\nendif",
+        "isUpdate": false
+      },
+      "filesCreated": [
+        "Makefile"
+      ],
+      "executionStatus": "completed",
+      "executionApproval": "approved"
+    },
+    {
+      "taskId": "update-github-actions-for-lint",
+      "status": "completed",
+      "output": {
+        "generated": "{\n  \"files\": {\n    \".github/workflows/ci.yml\": \"name: CI\\n\\non:\\n  push:\\n    branches: [main]\\n  pull_request:\\n    branches: [main]\\n\\njobs:\\n  build:\\n    runs-on: ubuntu-latest\\n    steps:\\n      - uses: actions/checkout@v4\\n\\n      - uses: actions/setup-node@v4\\n        with:\\n          node-version: 20\\n\\n      - run: npm ci\\n      - run: npm run lint\\n      - run: npm run build\\n\\n  lint-docker:\\n    runs-on: ubuntu-latest\\n    steps:\\n      - uses: actions/checkout@v4\\n      - name: Run Hadolint to lint Dockerfile\\n        run: make lint-docker\\n        shell: bash\"\n  }\n}",
+        "isUpdate": true
+      },
+      "filesCreated": [],
+      "executionStatus": "completed",
+      "executionApproval": "approved"
+    }
+  ]
+}
