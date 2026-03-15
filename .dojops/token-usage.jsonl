@@ -1,0 +1,6 @@
+{"timestamp":"2026-03-15T18:45:04.859Z","command":"cli","provider":"openai","promptTokens":1989,"completionTokens":391,"totalTokens":2380}
+{"timestamp":"2026-03-15T18:45:12.427Z","command":"cli","provider":"openai","promptTokens":1552,"completionTokens":44,"totalTokens":1596}
+{"timestamp":"2026-03-15T18:45:13.875Z","command":"cli","provider":"openai","promptTokens":1656,"completionTokens":22,"totalTokens":1678}
+{"timestamp":"2026-03-15T18:45:16.843Z","command":"cli","provider":"openai","promptTokens":1941,"completionTokens":184,"totalTokens":2125}
+{"timestamp":"2026-03-15T18:45:27.251Z","command":"cli","provider":"openai","promptTokens":2224,"completionTokens":277,"totalTokens":2501}
+{"timestamp":"2026-03-15T18:45:36.932Z","command":"cli","provider":"openai","promptTokens":1819,"completionTokens":915,"totalTokens":2734}
